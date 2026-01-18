@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Value Trade Table</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #5AB4B4;
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header a {
+            color: #FF9800;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #fb8c00;
+        }
+
+        .table-name-input {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            border: 2px solid #5AB4B4;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #FF9800;
+            border-bottom-color: #FF9800;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #5AB4B4;
+            color: white;
+            z-index: 10;
+        }
+
+        th, td {
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #5AB4B4;
+            margin-right: 6px;
+        }
+
+        .item-text {
+            display: inline-block;
+            min-width: 150px;
+            padding: 4px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            cursor: text;
+        }
+
+        .item-text:focus {
+            outline: none;
+            border-color: #5AB4B4;
+            background: #e8f6f6;
+        }
+
+        .points-display {
+            font-weight: 600;
+            color: #5AB4B4;
+            min-width: 30px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .stage {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        .stage.discovery { background: #28a745; }
+        .stage.qualification { background: #ffc107; color: #333; }
+        .stage.evaluation { background: #17a2b8; }
+        .stage.proposal { background: #fd7e14; }
+        .stage.contract { background: #dc3545; }
+        .stage.closing { background: #6f42c1; }
+
+        .summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .summary h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        .summary-item strong {
+            color: #FF9800;
+        }
+
+        .status-box {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-box.balanced {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #70C040;
+        }
+
+        .status-box.unbalanced {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .status-box.poor {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .chart-container {
+            margin-top: 15px;
+            height: 250px;
+        }
+
+        .edit-section {
+            padding: 15px;
+        }
+
+        .edit-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .points-edit-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .point-edit-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .point-edit-item label {
+            font-weight: 600;
+            color: #FF9800;
+        }
+
+        .point-edit-item input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .point-edit-item input:focus {
+            outline: none;
+            border-color: #5AB4B4;
+        }
+
+        .save-btn-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .save-message {
+            margin-top: 10px;
+            color: #28a745;
+            font-size: 14px;
+            display: none;
+        }
+
+        .save-message.show {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .share-link-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="home.html">← Back to Home</a>
+            <div class="header-buttons">
+                <button class="btn" id="shareBtn" onclick="shareTable()" style="display: none;">Share Link</button>
+            </div>
+        </div>
+
+        <input type="text" id="tableName" class="table-name-input" placeholder="Enter table name...">
+
+        <div class="tabs">
+            <button class="tab active" data-tab="view">View Table</button>
+            <button class="tab" data-tab="edit">Edit Items</button>
+        </div>
+
+        <div class="tab-content active" id="viewTab">
+            <div class="main-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer Ask (Gives)</th>
+                                <th>Points</th>
+                                <th>Your Ask (Gets)</th>
+                                <th>Points</th>
+                                <th>Stage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Table rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="summary">
+                    <h3>Summary</h3>
+                    <div class="summary-item">
+                        <span>Total Gives Points:</span>
+                        <strong id="totalGives">0</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Total Gets Points:</span>
+                        <strong id="totalGets">0</strong>
+                    </div>
+                    <div class="status-box" id="statusBox">Balanced</div>
+                    <div class="chart-container">
+                        <canvas id="chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="editTab">
+            <div class="edit-section">
+                <h2>Edit All Items by Points (1-20)</h2>
+                <div class="points-edit-grid" id="pointsEditGrid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <div class="save-btn-container">
+                    <button class="btn" onclick="saveAllChanges()">Save All Changes</button>
+                    <div class="save-message" id="saveMessage">✓ Changes saved!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkbox Label Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Checkbox Label</h3>
+            <form id="editForm">
+                <input type="text" id="editCheckboxLabel" placeholder="e.g., Checkbox 1">
+                <div class="modal-buttons">
+                    <button type="submit" class="btn">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <h3>Share Table</h3>
+            <input type="text" id="shareLinkInput" class="share-link-input" readonly>
+            <div class="modal-buttons">
+                <button class="btn" onclick="copyShareLink()">Copy Link</button>
+                <button type="button" class="btn btn-secondary" onclick="closeShareModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Get table ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let tableId = urlParams.get('tableId');
+        const isViewOnly = urlParams.get('view') === 'true';
+
+        // Default data structure
+        const defaultData = [
+            { order: 1, gives: { checked: true, text: 'Sales materials', points: 1 }, gets: { checked: false, text: 'Direct Contact Information – Full name, role/title, direct dial, and mobile number', points: 0 }, stage: 'Discovery' },
+            { order: 2, gives: { checked: true, text: 'Case Study', points: 2 }, gets: { checked: false, text: 'Get Linkedin Connection', points: 0 }, stage: null },
+            { order: 3, gives: { checked: true, text: 'NDA', points: 3 }, gets: { checked: false, text: 'NDA', points: 0 }, stage: null },
+            { order: 4, gives: { checked: false, text: '"Ballpark" Pricing', points: 0 }, gets: { checked: false, text: 'Critical Business Issue Quantification ROI', points: 0 }, stage: 'Qualification' },
+            { order: 5, gives: { checked: true, text: 'Competitive Comparison', points: 5 }, gets: { checked: false, text: 'Customer Goals and Obstacles', points: 0 }, stage: null },
+            { order: 6, gives: { checked: false, text: 'Demo', points: 0 }, gets: { checked: false, text: 'Joint Evaluation Plan', points: 0 }, stage: null },
+            { order: 7, gives: { checked: false, text: 'RoadMap', points: 0 }, gets: { checked: true, text: 'Budget/ Timelines/ Priorities Confirmed through discovery email', points: 7 }, stage: null },
+            { order: 8, gives: { checked: true, text: 'Trial', points: 8 }, gets: { checked: false, text: 'Access to decision maker', points: 0 }, stage: null },
+            { order: 9, gives: { checked: false, text: 'Extension of Trial', points: 0 }, gets: { checked: true, text: 'Committee members identified', points: 9 }, stage: null },
+            { order: 10, gives: { checked: true, text: 'POC', points: 10 }, gets: { checked: true, text: 'Meet all committee members /stakeholders', points: 10 }, stage: 'Evaluation' },
+            { order: 11, gives: { checked: false, text: 'Access to Executive Management', points: 0 }, gets: { checked: false, text: 'Buying Process and approval process documented', points: 0 }, stage: null },
+            { order: 12, gives: { checked: false, text: 'Passes to Trade Show', points: 0 }, gets: { checked: false, text: 'Champion', points: 0 }, stage: 'Proposal' },
+            { order: 13, gives: { checked: true, text: 'Legal discussion', points: 13 }, gets: { checked: false, text: 'Proposal Draft Submitted', points: 0 }, stage: null },
+            { order: 14, gives: { checked: false, text: 'Redlines', points: 0 }, gets: { checked: false, text: 'Meeting to review and modify proposal', points: 0 }, stage: 'Contract' },
+            { order: 15, gives: { checked: false, text: 'Payment Terms', points: 0 }, gets: { checked: false, text: 'Confirm purchase deadlines', points: 0 }, stage: 'Closing' },
+            { order: 16, gives: { checked: false, text: 'References', points: 0 }, gets: { checked: false, text: 'Identify and meet legal contract', points: 0 }, stage: null },
+            { order: 17, gives: { checked: false, text: 'Consulting', points: 0 }, gets: { checked: false, text: 'Redline Contract work confirmed with deadline', points: 0 }, stage: null },
+            { order: 18, gives: { checked: false, text: 'Training /Onboarding', points: 0 }, gets: { checked: false, text: 'Implementation and Task Owners Documented', points: 0 }, stage: null },
+            { order: 19, gives: { checked: false, text: 'Case Study', points: 0 }, gets: { checked: false, text: 'Signed Contract /PO', points: 0 }, stage: null },
+            { order: 20, gives: { checked: false, text: 'Discount', points: 0 }, gets: { checked: false, text: 'Case study reference Agreed', points: 0 }, stage: null }
+        ];
+
+        // Initialize data
+        let tradeData = loadTableData();
+        let chart = null;
+        let checkboxLabels = {};
+        let currentEditRow = null;
+        let currentEditType = null;
+        let currentCheckboxNumber = null;
+
+        // Sync checkboxLabels from tradeData (for loading saved/imported data)
+        function syncCheckboxLabelsFromData() {
+            checkboxLabels = {};
+            tradeData.forEach((row, index) => {
+                // Only sync labels for 'gets' checkboxes (right-hand side) since popup only opens for those
+                if (row.gets && row.gets.checkboxLabel) {
+                    const checkboxNum = index + 1;
+                    const checkboxKey = `checkbox_${checkboxNum}`;
+                    checkboxLabels[checkboxKey] = row.gets.checkboxLabel;
+                }
+            });
+        }
+
+        // Load table data from localStorage
+        function loadTableData() {
+            let loadedData;
+            if (tableId) {
+                const tables = JSON.parse(localStorage.getItem('hvtTables') || '[]');
+                const table = tables.find(t => t.id === tableId);
+                if (table) {
+                    setTimeout(() => {
+                        const nameInput = document.getElementById('tableName');
+                        if (nameInput) {
+                            nameInput.value = table.name || '';
+                        }
+                    }, 0);
+                    loadedData = JSON.parse(JSON.stringify(table.data));
+                } else {
+                    loadedData = JSON.parse(JSON.stringify(defaultData));
+                }
+            } else {
+                loadedData = JSON.parse(JSON.stringify(defaultData));
+            }
+            return loadedData;
+        }
+
+        // Save table data to localStorage
+        function saveTableData() {
+            if (isViewOnly) return;
+
+            let currentTableId = tableId;
+            const tables = JSON.parse(localStorage.getItem('hvtTables') || '[]');
+            const tableNameInput = document.getElementById('tableName');
+            const tableName = tableNameInput ? tableNameInput.value : 'Untitled Table';
+
+            if (!currentTableId) {
+                currentTableId = 'table_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set('tableId', currentTableId);
+                window.history.replaceState({}, '', newUrl);
+                tableId = currentTableId;
+            }
+
+            let tableIndex = tables.findIndex(t => t.id === currentTableId);
+
+            if (tableIndex === -1) {
+                tables.push({
+                    id: currentTableId,
+                    name: tableName,
+                    data: JSON.parse(JSON.stringify(tradeData)),
+                    createdAt: new Date().toISOString()
+                });
+            } else {
+                tables[tableIndex].data = JSON.parse(JSON.stringify(tradeData));
+                tables[tableIndex].name = tableName;
+                tables[tableIndex].updatedAt = new Date().toISOString();
+            }
+
+            localStorage.setItem('hvtTables', JSON.stringify(tables));
+        }
+
+        // Auto-save
+        function autoSave() {
+            saveTableData();
+        }
+
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            // Check if we're on the View Table tab (not Edit tab)
+            // Allow checkboxes to work but disable text editing on View Table tab
+            const isViewTab = document.getElementById('viewTab').classList.contains('active');
+            const allowTextEditing = !isViewOnly && !isViewTab; // Only allow text editing if not view-only and not on View Table tab
+            const allowCheckboxes = !isViewOnly; // Checkboxes work everywhere except view-only mode
+
+            tradeData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                const stageClass = row.stage ? row.stage.toLowerCase().replace(/\s+/g, '-') : '';
+                const stageDisplay = row.stage || '';
+                
+                // In View Table tab, always show order (1-20) as points
+                const givesPointsDisplay = row.order;
+                const getsPointsDisplay = row.order;
+
+                tr.innerHTML = `
+                    <td>
+                        <input type="checkbox" class="checkbox" data-row="${index}" data-type="gives" ${row.gives.checked ? 'checked' : ''} ${!allowCheckboxes ? 'disabled' : ''}>
+                        <span class="item-text" contenteditable="${allowTextEditing}" data-row="${index}" data-type="gives">${row.gives.text}</span>
+                    </td>
+                    <td><span class="points-display">${givesPointsDisplay}</span></td>
+                    <td>
+                        <input type="checkbox" class="checkbox" data-row="${index}" data-type="gets" ${row.gets.checked ? 'checked' : ''} ${!allowCheckboxes ? 'disabled' : ''}>
+                        <span class="item-text" contenteditable="${allowTextEditing}" data-row="${index}" data-type="gets">${row.gets.text}</span>
+                    </td>
+                    <td><span class="points-display">${getsPointsDisplay}</span></td>
+                    <td>${stageDisplay ? `<span class="stage ${stageClass}">${stageDisplay}</span>` : ''}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+
+            // Add event listeners for checkboxes (they work on View Table tab too)
+            document.querySelectorAll('.checkbox').forEach(checkbox => {
+                checkbox.addEventListener('click', (e) => {
+                    if (!allowCheckboxes) {
+                        e.preventDefault();
+                        return;
+                    }
+                    e.stopPropagation();
+                    const rowIndex = parseInt(e.target.dataset.row);
+                    const type = e.target.dataset.type;
+                    const row = tradeData[rowIndex];
+                    
+                    row[type].checked = e.target.checked;
+                    if (e.target.checked && row[type].points === 0) {
+                        row[type].points = row.order;
+                    } else if (!e.target.checked) {
+                        row[type].points = 0;
+                    }
+                    
+                    updateSummary();
+                    updateChart();
+                    autoSave();
+                    
+                    // Only open popup for right-hand side (gets) checkboxes
+                    if (type === 'gets' && e.target.checked) {
+                        const checkboxNum = rowIndex + 1;
+                        openEditModal(rowIndex, type, checkboxNum);
+                    }
+                });
+            });
+
+            // Text edit listeners (only work on Edit tab, not View Table tab)
+            document.querySelectorAll('.item-text').forEach(textSpan => {
+                textSpan.addEventListener('blur', (e) => {
+                    if (isViewOnly || !allowTextEditing) return;
+                    const rowIndex = parseInt(e.target.dataset.row);
+                    const type = e.target.dataset.type;
+                    const newText = e.target.textContent.trim();
+                    if (tradeData[rowIndex] && tradeData[rowIndex][type]) {
+                        tradeData[rowIndex][type].text = newText;
+                        // Also update the edit section if it's visible
+                        renderEditSection();
+                        autoSave();
+                    }
+                });
+            });
+
+            updateSummary();
+            updateChart();
+        }
+
+        // Update summary
+        function updateSummary() {
+            const totalGives = tradeData.reduce((sum, row) => sum + (row.gives.checked ? row.gives.points : 0), 0);
+            const totalGets = tradeData.reduce((sum, row) => sum + (row.gets.checked ? row.gets.points : 0), 0);
+            const pointsLeftGives = 20 - totalGives;
+            const pointsLeftGets = 20 - totalGets;
+            const delta = totalGets - totalGives;
+            const absDelta = Math.abs(delta);
+
+            document.getElementById('totalGives').textContent = totalGives;
+            document.getElementById('totalGets').textContent = totalGets;
+            // Keep tracking points left in background (not displayed)
+            // pointsLeftGives and pointsLeftGets are calculated but not shown
+            
+            // Update status box
+            const statusBox = document.getElementById('statusBox');
+            if (absDelta <= 10) {
+                statusBox.textContent = 'Balanced';
+                statusBox.className = 'status-box balanced';
+            } else if (absDelta >= 11 && absDelta <= 20) {
+                statusBox.textContent = 'Unbalanced Opportunity';
+                statusBox.className = 'status-box unbalanced';
+            } else {
+                statusBox.textContent = 'Poor Opportunity';
+                statusBox.className = 'status-box poor';
+            }
+        }
+
+        // Update chart
+        function updateChart() {
+            // Calculate total points from checked items - sum up the points of checked items
+            const totalGives = tradeData.reduce((sum, row) => {
+                if (row.gives.checked) {
+                    return sum + row.gives.points;
+                }
+                return sum;
+            }, 0);
+            
+            const totalGets = tradeData.reduce((sum, row) => {
+                if (row.gets.checked) {
+                    return sum + row.gets.points;
+                }
+                return sum;
+            }, 0);
+
+            const ctx = document.getElementById('chart').getContext('2d');
+            
+            // If chart exists, update the data instead of recreating
+            if (chart) {
+                chart.data.datasets[0].data = [totalGives, totalGets];
+                chart.data.datasets[0].backgroundColor = ['#70C040', '#5AB4B4'];
+                chart.data.datasets[0].borderColor = ['#5fa835', '#4a9a9a'];
+                chart.update();
+            } else {
+                // Create new chart
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total Gives Points', 'Total Gets Points'],
+                        datasets: [{
+                            label: 'Points',
+                            data: [totalGives, totalGets],
+                            backgroundColor: ['#70C040', '#5AB4B4'],
+                            borderColor: ['#5fa835', '#4a9a9a'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 300
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 210,
+                                ticks: {
+                                    stepSize: 10,
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Render edit section
+        function renderEditSection() {
+            const grid = document.getElementById('pointsEditGrid');
+            grid.innerHTML = '';
+
+            for (let point = 1; point <= 20; point++) {
+                // Find item by order (which corresponds to point 1-20)
+                const item = tradeData.find(row => row.order === point);
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'point-edit-item';
+                itemDiv.innerHTML = `
+                    <label>Point ${point}:</label>
+                    <input type="text" class="gives-text-edit" data-point="${point}" placeholder="Customer Ask (Gives)" value="${item ? item.gives.text : ''}">
+                    <input type="text" class="gets-text-edit" data-point="${point}" placeholder="Your Ask (Gets)" value="${item ? item.gets.text : ''}">
+                `;
+                grid.appendChild(itemDiv);
+            }
+
+            document.querySelectorAll('.gives-text-edit, .gets-text-edit').forEach(input => {
+                input.addEventListener('blur', handlePointTextEdit);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        input.blur();
+                    }
+                });
+            });
+        }
+
+        function handlePointTextEdit(e) {
+            const point = parseInt(e.target.dataset.point);
+            const isGives = e.target.classList.contains('gives-text-edit');
+            const newText = e.target.value.trim();
+
+            // Find item by order (which corresponds to point 1-20)
+            const item = tradeData.find(row => row.order === point);
+
+            if (item) {
+                // Update the data
+                if (isGives) {
+                    item.gives.text = newText;
+                } else {
+                    item.gets.text = newText;
+                }
+                
+                // Update table display in View Table tab - find by order
+                const tbody = document.getElementById('tableBody');
+                if (tbody) {
+                    Array.from(tbody.children).forEach((tr, rowIndex) => {
+                        const row = tradeData[rowIndex];
+                        if (!row || row.order !== point) return;
+                        
+                        // Update the corresponding text span in the View Table
+                        if (isGives) {
+                            const textSpan = tr.querySelector('.item-text[data-type="gives"]');
+                            if (textSpan) {
+                                textSpan.textContent = newText;
+                            }
+                        } else {
+                            const textSpan = tr.querySelector('.item-text[data-type="gets"]');
+                            if (textSpan) {
+                                textSpan.textContent = newText;
+                            }
+                        }
+                    });
+                }
+                
+                autoSave();
+            }
+        }
+
+        function saveAllChanges() {
+            autoSave();
+            const saveMessage = document.getElementById('saveMessage');
+            saveMessage.classList.add('show');
+            setTimeout(() => {
+                saveMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // Modal functions
+        function openEditModal(rowIndex, type, checkboxNum) {
+            currentEditRow = rowIndex;
+            currentEditType = type;
+            currentCheckboxNumber = checkboxNum;
+            const checkboxKey = `checkbox_${checkboxNum}`;
+            const defaultLabel = `Checkbox ${checkboxNum}`;
+            
+            // Check tradeData first for saved label, then checkboxLabels
+            let savedLabel = defaultLabel;
+            if (tradeData[rowIndex] && tradeData[rowIndex][type] && tradeData[rowIndex][type].checkboxLabel) {
+                savedLabel = tradeData[rowIndex][type].checkboxLabel;
+            } else if (checkboxLabels[checkboxKey]) {
+                savedLabel = checkboxLabels[checkboxKey];
+            }
+            
+            document.getElementById('editCheckboxLabel').value = savedLabel;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        document.getElementById('editForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (currentCheckboxNumber !== null) {
+                const checkboxKey = `checkbox_${currentCheckboxNumber}`;
+                const newLabel = document.getElementById('editCheckboxLabel').value.trim() || `Checkbox ${currentCheckboxNumber}`;
+                checkboxLabels[checkboxKey] = newLabel;
+                
+                // Save to tradeData for export/import
+                if (currentEditRow !== null && tradeData[currentEditRow]) {
+                    const type = currentEditType;
+                    if (tradeData[currentEditRow][type]) {
+                        tradeData[currentEditRow][type].checkboxLabel = newLabel;
+                    }
+                }
+                
+                autoSave();
+                closeModal();
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                tab.classList.add('active');
+                const targetTab = tab.dataset.tab;
+                document.getElementById(`${targetTab}Tab`).classList.add('active');
+                
+                if (targetTab === 'edit') {
+                    renderEditSection();
+                } else {
+                    // Re-render table to show latest changes
+                    renderTable();
+                }
+            });
+        });
+
+        // Share functionality
+        function shareTable() {
+            if (!tableId) {
+                alert('Please save your table first.');
+                return;
+            }
+            const shareUrl = `${window.location.origin}${window.location.pathname}?tableId=${tableId}&view=true`;
+            document.getElementById('shareLinkInput').value = shareUrl;
+            document.getElementById('shareModal').style.display = 'block';
+        }
+
+        function copyShareLink() {
+            const input = document.getElementById('shareLinkInput');
+            input.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').style.display = 'none';
+        }
+
+
+        // Initialize
+        if (isViewOnly) {
+            document.getElementById('shareBtn').style.display = 'none';
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.dataset.tab === 'edit') {
+                    tab.style.display = 'none';
+                }
+            });
+        }
+
+        // Table name auto-save
+        document.getElementById('tableName').addEventListener('blur', autoSave);
+        document.getElementById('tableName').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.target.blur();
+            }
+        });
+
+        // Sync checkbox labels from loaded data
+        syncCheckboxLabelsFromData();
+
+        // Initial render
+        renderTable();
+    </script>
+</body>
+</html>
